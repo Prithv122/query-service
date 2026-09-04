@@ -40,6 +40,20 @@
   `daily_order_volume`, which is already ~7 ms cold. Reading Parquet back has a ~3 ms floor.
   Reported both rather than quoting the flattering average.
 
+### 2026-09-04 — ship gate
+
+- **A third real bug, caught only by exercising the documented commands, not by the
+  existing test suite.** `uv run query-service cache` (the README's own §6 example, no
+  flags) crashed with `TypeError: argument should be a str or an os.PathLike object ...,
+  not 'NoneType'`. `--cache-dir` defaults to `None` at the argparse level; `cmd_cache` passed
+  that straight into `ResultCache(directory=...)`, which calls `Path(None)` inside
+  `.stats()`/`.clear()`. `client.py`'s constructor already had the right pattern
+  (`Path(cache_dir) if cache_dir else DEFAULT_DIR`); `cmd_cache` just didn't use it. Every
+  existing CLI test passed `--cache-dir` explicitly via the `base` fixture, so the untested
+  path was exactly the one the README tells a reader to run. Fixed in `cli.py`, and added
+  `test_cache_command_uses_default_dir_when_unset` (`monkeypatch.chdir`, no `--cache-dir`)
+  so the default path has real coverage instead of just the explicit one.
+
 ---
 
 ## Rejected approaches

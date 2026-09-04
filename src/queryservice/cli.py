@@ -5,11 +5,12 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
 
 import pandas as pd
 
 from . import warehouse
-from .cache import ResultCache
+from .cache import DEFAULT_DIR, ResultCache
 from .catalog import Query
 from .client import QueryService
 from .safety import DEFAULT_ROW_LIMIT, MAX_ROW_LIMIT, UnsafeQuery
@@ -107,7 +108,9 @@ def cmd_sql(args: argparse.Namespace) -> int:
 
 
 def cmd_cache(args: argparse.Namespace) -> int:
-    cache = ResultCache(directory=args.cache_dir, ttl_seconds=args.ttl)
+    cache = ResultCache(
+        directory=Path(args.cache_dir) if args.cache_dir else DEFAULT_DIR, ttl_seconds=args.ttl
+    )
     if args.clear:
         print(f"Removed {cache.clear()} cached results")
     else:

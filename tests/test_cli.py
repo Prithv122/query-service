@@ -62,6 +62,12 @@ def test_cache_stats_and_clear(base, capsys):
     assert "Removed 1" in capsys.readouterr().out
 
 
+def test_cache_command_uses_default_dir_when_unset(database, tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    assert cli.main(["--database", str(database), "cache"]) == 0
+    assert json.loads(capsys.readouterr().out)["entries"] == 0
+
+
 def test_hostile_identifier_is_rejected_with_exit_2(base, capsys):
     code = cli.main(
         [*base, "run", "revenue_by_dimension", *WINDOW, "--param", "dimension=n_name; DROP TABLE t"]
