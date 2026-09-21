@@ -20,7 +20,7 @@ No accounts, no services, no env vars — hence no `.env.example`.
 - [x] Safe parameterised query API over a warehouse (CATALOG F2)
 - [x] Caching, CLI **and** notebook interface (`notebooks/demo.ipynb`)
 - [x] SQL-injection awareness demonstrated, not asserted — adversarial test suite
-- [ ] Ship gate passes (`/ship`)
+- [ ] Ship gate passes
 
 ## Project-specific notes
 
