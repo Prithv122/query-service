@@ -101,6 +101,26 @@ def test_the_connection_itself_cannot_write(service):
     assert service.run_sql("SELECT count(*) AS n FROM nation").frame["n"].iloc[0] == 25
 
 
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "SELECT * FROM read_text('pyproject.toml')",
+        "SELECT * FROM read_csv('pyproject.toml')",
+        "SELECT * FROM glob('*')",
+        "SELECT * FROM read_parquet('anything.parquet')",
+    ],
+)
+def test_a_single_select_cannot_read_files(service, sql):
+    """A table function is a read, so layer 3 passes it; the connection must refuse it."""
+    with pytest.raises(duckdb.PermissionException):
+        service.run_sql(sql)
+
+
+def test_file_access_cannot_be_switched_back_on(service):
+    with pytest.raises(duckdb.Error):
+        service.connection.execute("SET enable_external_access = true")
+
+
 def test_missing_warehouse_is_a_clean_error(tmp_path):
     with QueryService(tmp_path / "nope.duckdb") as service, pytest.raises(FileNotFoundError):
         service.run_sql("SELECT 1")

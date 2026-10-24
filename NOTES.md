@@ -72,3 +72,19 @@
 - [ ] Query timeout and a scanned-bytes budget — the row cap limits what comes back, not what gets scanned. That is the real DoS surface.
 - [ ] `EXPLAIN ANALYZE` capture behind a `--profile` flag, so the CLI can show which query is worth caching rather than my guessing from the timings.
 - [ ] Cache stampede: two processes asking the same cold question both scan. Single-flight would fix it, and matters the moment this is shared.
+
+## 2026-10-25 — layer 4 let a SELECT read local files
+
+A differential attack suite in the MCP server that vendors this service (`44-mcp-server`) sent
+`SELECT * FROM read_text('C:/Windows/win.ini')`, `read_csv(...)` and `glob('*')` through
+`run_sql`. All three returned rows. Layer 3 is right to pass them (each is one `SELECT`), and the
+read-only connection only stops writes, so any file the process could read was readable through
+ad-hoc SQL. Catalog queries were never affected: their SQL is fixed.
+
+Fix: `warehouse.connect` opens with `enable_external_access = false` (table functions over files,
+`ATTACH`, `COPY` and extension loading all refuse) and `lock_configuration = true` (no `SET` can turn
+it back on). Two tests: four file-reading SELECTs raise `PermissionException`, and the `SET` fails.
+`build` is unaffected: it uses its own writable connection, and the `tpch` extension load happens there.
+
+Lesson: "read-only" describes the database file, not the process. The guard I was relying on had
+a narrower meaning than the claim I made for it.
